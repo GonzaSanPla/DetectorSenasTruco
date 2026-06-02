@@ -3,6 +3,7 @@ import mediapipe as mp
 import numpy as np
 import os
 import urllib.request
+from PIL import Image, ImageDraw, ImageFont
 
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
 MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "face_landmarker.task")
@@ -10,13 +11,13 @@ MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "face_land
 
 class GestureDetector:
     GESTURE_LABELS = [
-        "Ambas cejas levantadas",
-        "Guiñar",
-        "Comisura derecha",
-        "Comisura izquierda",
-        "Morder labio inferior",
-        "Beso",
-        "Abrir la boca",
+        "Macho-1 de espadas-Cejas levantadas",
+        "Hembra-1 de basto-Guiniar",
+        "7 de espadas-Mover comisura del labio derecha",
+        "7 de oro-Mover comisura del labio izquierdo",
+        "3-Morder labio inferior",
+        "2-Beso",
+        "1 de oro o copas-Abrir la boca",
     ]
 
     def __init__(
@@ -157,25 +158,41 @@ class GestureDetector:
 
         return person_der, person_izq
 
-    def _draw_gestures(self, frame, active):
-        overlay = frame.copy()
-        cv2.rectangle(overlay, (10, 10), (280, 280), (0, 0, 0), -1)
-        frame[:] = cv2.addWeighted(overlay, 0.5, frame, 0.5, 0)
+    def _get_font(self):
+        if hasattr(self, '_font'):
+            return self._font
+        for path in [
+            "C:/Windows/Fonts/segoeui.ttf",
+            "C:/Windows/Fonts/arial.ttf",
+            "C:/Windows/Fonts/tahoma.ttf",
+        ]:
+            if os.path.exists(path):
+                self._font = ImageFont.truetype(path, 28)
+                return self._font
+        self._font = ImageFont.load_default()
+        return self._font
 
-        cv2.putText(
-            frame, "GESTOS DETECTADOS", (20, 35),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2,
+    def _draw_gestures(self, frame, active):
+        font_pil = self._get_font()
+        max_w = max(
+            font_pil.getbbox(f"  {l}")[2]
+            for l in self.GESTURE_LABELS
         )
+        panel_r = 10 + 20 + max_w + 20
+
+        panel = frame[10:331, 10:panel_r].copy()
+        white_bg = np.full_like(panel, (255, 255, 255), dtype=np.uint8)
+        blended = cv2.addWeighted(white_bg, 0.5, panel, 0.5, 0)
+        frame[10:331, 10:panel_r] = blended
+
+        pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        draw = ImageDraw.Draw(pil_img)
 
         for i, label in enumerate(self.GESTURE_LABELS):
-            y = 65 + i * 30
+            y = 20 + i * 44
             if active[i]:
-                cv2.putText(
-                    frame, f"  {label}", (20, y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2,
-                )
+                draw.text((20, y), f"  {label}", fill=(0, 140, 0), font=font_pil)
             else:
-                cv2.putText(
-                    frame, f"  {label}", (20, y),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 1,
-                )
+                draw.text((20, y), f"  {label}", fill=(20, 20, 20), font=font_pil)
+
+        frame[:] = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)

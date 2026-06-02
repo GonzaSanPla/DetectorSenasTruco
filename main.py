@@ -1,13 +1,15 @@
 import cv2
+import sys
 from gesture_detector import GestureDetector
 
-CAM_WIDTH = 640
-CAM_HEIGHT = 480
+CAM_WIDTH = 1920
+CAM_HEIGHT = 1080
+CAM_INDEX = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 
 
 def main():
     detector = GestureDetector()
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(CAM_INDEX)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAM_WIDTH)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAM_HEIGHT)
 
@@ -15,7 +17,9 @@ def main():
         print("Error: No se pudo abrir la webcam")
         return
 
-    print(f"Resolucion: {CAM_WIDTH}x{CAM_HEIGHT}  Presiona 'q' para salir")
+    real_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    real_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print(f"Camara {CAM_INDEX} | Resolucion real: {real_w}x{real_h}  Presiona 'q' para salir")
 
     cv2.namedWindow("Detector de Senas - Truco", cv2.WINDOW_NORMAL)
 
