@@ -1,9 +1,9 @@
 import cv2
-from eyebrow_detector import EyebrowDetector
+from gesture_detector import GestureDetector
 
 
 def main():
-    detector = EyebrowDetector()
+    detector = GestureDetector()
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
@@ -20,9 +20,9 @@ def main():
 
         frame = cv2.flip(frame, 1)
 
-        frame, state = detector.process_frame(frame)
+        frame, active = detector.process_frame(frame)
 
-        cv2.imshow("Detector de Cejas - Truco", frame)
+        cv2.imshow("Detector de Senas - Truco", frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
